@@ -72,7 +72,7 @@ RUN powershell_version=7.1.4 \
     && apk add --no-cache ncurses-terminfo-base
 
 
-ARG RELEASE_TAG=openvscode-server-v1.60.2
+ARG RELEASE_TAG=openvscode-server-nightly-v1.61.0
 
 ARG USERNAME=openvscode-server
 ARG USER_UID=1000
