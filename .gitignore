@@ -1,0 +1,10 @@
+.docker/
+.dotnet/
+.local/
+.aspnet/
+.nuget/
+.templateengine/
+.vscode-remote/
+myWebApp/
+.ash_history
+.node_repl_history

@@ -1,10 +1,10 @@
 FROM docker:dind
 
 # Install .NET
-ENV DOTNET_VERSION=5.0.10
+ENV DOTNET_VERSION=6.0.0
 
 RUN wget -O dotnet.tar.gz https://dotnetcli.azureedge.net/dotnet/Runtime/$DOTNET_VERSION/dotnet-runtime-$DOTNET_VERSION-linux-musl-x64.tar.gz \
-    && dotnet_sha512='d0ca3aef030a575daf09fcfb8abc3056dcb6567da661c8c18162882a8ae9af3de013053ada82e0ee3042a806cb10dd234f59aa5bbdcd229d5ead582464ad4154' \
+    && dotnet_sha512='1b6b5346426e53afd7ea4344e79b29a903b36bb1dfbc88d68f3a17a88b42ca9563d8af7c086cc0d455cb344c7d11896d585667c76e424b2e2760e7421018c1c7' \
     && echo "$dotnet_sha512  dotnet.tar.gz" | sha512sum -c - \
     && mkdir -p /usr/share/dotnet \
     && tar -C /usr/share/dotnet -oxzf dotnet.tar.gz \
@@ -12,10 +12,10 @@ RUN wget -O dotnet.tar.gz https://dotnetcli.azureedge.net/dotnet/Runtime/$DOTNET
     && rm dotnet.tar.gz
 
 # Install ASP.NET Core
-ENV ASPNET_VERSION=5.0.10
+ENV ASPNET_VERSION=6.0.0
 
 RUN wget -O aspnetcore.tar.gz https://dotnetcli.azureedge.net/dotnet/aspnetcore/Runtime/$ASPNET_VERSION/aspnetcore-runtime-$ASPNET_VERSION-linux-musl-x64.tar.gz \
-    && aspnetcore_sha512='0e995f892eca8893e211e9965b2378da263233ad92c5f32624c4dfbdaec1ad7b8b3c5496a27a81891b321eb12d7a08445cd86832e219584a31cad4baef18b9d2' \
+    && aspnetcore_sha512='7273e40bc301923052e2176e8321462790e3b654688f473dc7cac613ad27f181190dabbba79929f983424c9b5b5085b8d4be9cc9f0f1d0197f58ef3bb9aa8638' \
     && echo "$aspnetcore_sha512  aspnetcore.tar.gz" | sha512sum -c - \
     && tar -ozxf aspnetcore.tar.gz -C /usr/share/dotnet ./shared/Microsoft.AspNetCore.App \
     && rm aspnetcore.tar.gz
@@ -25,12 +25,16 @@ ENV \
     ASPNETCORE_URLS= \
     # Do not generate certificate
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
+    # Do not show first run text
+    DOTNET_NOLOGO=true \
     # SDK version
-    DOTNET_SDK_VERSION=5.0.401 \
+    DOTNET_SDK_VERSION=6.0.100 \
     # Disable the invariant mode (set in base image)
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
     # Enable correct mode for dotnet watch (only mode supported in a container)
     DOTNET_USE_POLLING_FILE_WATCHER=true \
+    # Unset Logging__Console__FormatterName from aspnet base image
+    Logging__Console__FormatterName= \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
     NUGET_XMLDOC_MODE=skip \
     # PowerShell telemetry for docker image usage
@@ -39,7 +43,7 @@ ENV \
 RUN apk add --no-cache \
         curl \
         icu-libs \
-        git \
+        git\
         bash \
         libstdc++\
         gcompat \
@@ -47,18 +51,18 @@ RUN apk add --no-cache \
 
 # Install .NET SDK
 RUN wget -O dotnet.tar.gz https://dotnetcli.azureedge.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-musl-x64.tar.gz \
-    && dotnet_sha512='a2077f4d1c9da9c69453b771cd239bad27f62379402cc5e1c74a1f2a960fd55efc85cc15eafbac11f17ea975895ce107fab4bbfc49880a0a14791e8ac13ca2de' \
+    && dotnet_sha512='428082c31fd588b12fd34aeae965a58bf1c26b0282184ae5267a85cdadc503f667c7c00e8641892c97fbd5ef26a38a605b683b45a0fef2da302ec7f921cf64fe' \
     && echo "$dotnet_sha512  dotnet.tar.gz" | sha512sum -c - \
     && mkdir -p /usr/share/dotnet \
-    && tar -C /usr/share/dotnet -oxzf dotnet.tar.gz ./packs ./sdk ./templates ./LICENSE.txt ./ThirdPartyNotices.txt \
+    && tar -C /usr/share/dotnet -oxzf dotnet.tar.gz ./packs ./sdk ./sdk-manifests ./templates ./LICENSE.txt ./ThirdPartyNotices.txt \
     && rm dotnet.tar.gz \
     # Trigger first run experience by running arbitrary cmd
     && dotnet help
 
 # Install PowerShell global tool
-RUN powershell_version=7.1.4 \
+RUN powershell_version=7.2.0 \
     && wget -O PowerShell.Linux.Alpine.$powershell_version.nupkg https://pwshtool.blob.core.windows.net/tool/$powershell_version/PowerShell.Linux.Alpine.$powershell_version.nupkg \
-    && powershell_sha512='61bc34d4f67ee73cb137ebf96ae3a1f8e978a32acfc02115f80c47277e553f1ce68cb41c1ad2b15ce0ed75a085f7f70dba237c09084855ff420e9a09f481b672' \
+    && powershell_sha512='671e1e7e5a8c1e9986ca6f5bf13f52898f4e812bc8fdaa9e406df6eb3ad704acdff06d493d97525678036441282ce4eb3eaaa0094232cee16507d3259b1321ca' \
     && echo "$powershell_sha512  PowerShell.Linux.Alpine.$powershell_version.nupkg" | sha512sum -c - \
     && mkdir -p /usr/share/powershell \
     && dotnet tool install --add-source / --tool-path /usr/share/powershell --version $powershell_version PowerShell.Linux.Alpine \
@@ -72,7 +76,7 @@ RUN powershell_version=7.1.4 \
     && apk add --no-cache ncurses-terminfo-base
 
 
-ARG RELEASE_TAG=openvscode-server-nightly-v1.61.0
+ARG RELEASE_TAG=openvscode-server-v1.62.0
 
 ARG USERNAME=openvscode-server
 ARG USER_UID=1000
@@ -85,6 +89,8 @@ WORKDIR /home/
 RUN wget https://github.com/gitpod-io/openvscode-server/releases/download/${RELEASE_TAG}/${RELEASE_TAG}-linux-x64.tar.gz && \
     tar -xzf ${RELEASE_TAG}-linux-x64.tar.gz && \
     rm -f ${RELEASE_TAG}-linux-x64.tar.gz
+
+
 
 # Creating the user and usergroup
 RUN addgroup --gid $USER_GID $USERNAME &&\
@@ -101,6 +107,7 @@ RUN chmod g+rw /home && \
     chown -R $USERNAME:$USERNAME /home/${RELEASE_TAG}-linux-x64 
 
 
+
 RUN wget https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-linux-x86_64 &&\
     mv docker-compose-linux-x86_64 docker-compose &&\
     chmod +x docker-compose &&\
@@ -110,14 +117,24 @@ RUN wget https://github.com/docker/compose/releases/download/v2.0.1/docker-compo
 USER $USERNAME
 
 WORKDIR /home/workspace/
+COPY . .
+# RUN chmod +x ./startup.sh
 
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 
 ENV HOME=/home/workspace
 ENV EDITOR=code
 ENV VISUAL=code
 ENV GIT_EDITOR="code --wait"
 ENV OPENVSCODE_SERVER_ROOT=/home/${RELEASE_TAG}-linux-x64
 
-COPY . .
+RUN mkdir -p .docker/cli-plugins &&\
+    wget -O docker-compose  https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-linux-x86_64 &&\
+    chmod +x docker-compose
+# RUN  ls &&\
+#    mv docker-compose .docker/cli-plugins && 
+    
+
 EXPOSE 3000
 
 #ENTRYPOINT ${OPENVSCODE_SERVER_ROOT}/server.sh
